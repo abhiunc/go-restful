@@ -42,53 +42,28 @@ func TestKeyValueEncoding(t *testing.T) {
 		Author        string
 		PublishedYear int
 	}
-
 	kv := new(keyvalue)
-	kv2 := new(keyvalue)
-
-	RegisterEntityAccessor("application/vnd.my.company+v1+kv", kv)
-
-	// registering entity accessor for v2
-	RegisterEntityAccessor("application/vnd.my.company+v2+kv", kv2)
-
+	RegisterEntityAccessor("application/kv", kv)
 	b := Book{"Singing for Dummies", "john doe", 2015}
 
 	// Write
 	httpWriter := httptest.NewRecorder()
-
-	// SWITCH VERSION
 	//								Accept									Produces
-	resp := Response{httpWriter, "application/vnd.my.company+v2+kv,*/*;q=0.8", []string{"application/vnd.my.company+v2+kv"}, 0, 0, true, nil}
-	// SWITCH VERSION
-
+	resp := Response{httpWriter, "application/kv,*/*;q=0.8", []string{"application/kv"}, 0, 0, true, nil}
 	resp.WriteEntity(b)
-
-
 	t.Log(string(httpWriter.Body.Bytes()))
-
 	if !kv.writeCalled {
-		t.Error("Write never called - v1")
-	}
-	if !kv2.writeCalled {
-		t.Error("Write never called - v2")
+		t.Error("Write never called")
 	}
 
 	// Read
 	bodyReader := bytes.NewReader(httpWriter.Body.Bytes())
 	httpRequest, _ := http.NewRequest("GET", "/test", bodyReader)
-
-	// SWITCH VERSION
-	httpRequest.Header.Set("Content-Type", "application/vnd.my.company+v2+kv; charset=UTF-8")
-	// SWITCH VERSION
-
+	httpRequest.Header.Set("Content-Type", "application/kv; charset=UTF-8")
 	request := NewRequest(httpRequest)
 	var bb Book
 	request.ReadEntity(&bb)
-
 	if !kv.readCalled {
-		t.Error("Read never called - v1")
-	}
-	if !kv2.readCalled {
-		t.Error("Read never called - v2")
+		t.Error("Read never called")
 	}
 }
